@@ -48,7 +48,7 @@ namespace Banking_Application
         {
 
             return "\nAccount No: " + accountNo + "\n" +
-            "Name: " + name + "\n" +
+            $"Name: {name[0]}***\n" +
             "Address Line 1: " + address_line_1 + "\n" +
             "Address Line 2: " + address_line_2 + "\n" +
             "Address Line 3: " + address_line_3 + "\n" +
