@@ -26,7 +26,10 @@ Changes made:
 
 # Part 3
 
-...
+Changes made:
+- create ActiveDirectoryHeloper.cs
+- add AD check at the start of the program
+- add AD admin check in closeBankAccount()
 
 # Part 4
 
@@ -40,6 +43,12 @@ Other fixes:
 	- checking if a name is valid and not empty
 	- allowing amounts only above 0
 	- checking if an account ID is valid
+- input validators applied to 
+	- addBankAccount()
+	- findBankAccount()
+	- closeBankAccount()
+	- lodge()
+	- withdraw()
 - data redaction (name hidden in BankAccount.ToString())
 - some try/catches for db/crypto ops
 

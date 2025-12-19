@@ -16,30 +16,10 @@ namespace Banking_Application
 
         static Logger()
         {
-            //if (!EventLog.SourceExists(SOURCE))
-            //{
-            //    EventLog.CreateEventSource(SOURCE, "Application");
-            //}
-            try
-            {
-                if (!EventLog.SourceExists(SOURCE))
-                {
-                    EventLog.CreateEventSource(SOURCE, "Application");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("EventLog unavailable: " + ex.Message);
-            }
+
         }
 
-        public static void Log(
-            string tellerName,
-            string accountNo,
-            string accountHolder,
-            string transactionType,
-            string reason = "N/A"
-        )
+        public static void Log(string tellerName, string accountNo, string accountHolder, string transactionType, string reason = "N/A")
         {
             string macAddress = GetMacAddress();
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
@@ -57,11 +37,38 @@ WHY: {reason}
 HOW: {appMeta}
 ";
 
-            Console.WriteLine(message);
-            return;
+            //Console.WriteLine(message);
+            //return;
 
             EventLog.WriteEntry(SOURCE, message, EventLogEntryType.Information);
         }
+
+        public static void LogAuthorizationAttempt(string userName, string requiredRole, bool success, string reason = "N/A")
+        {
+            string macAddress = GetMacAddress();
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            var asm = Assembly.GetExecutingAssembly();
+            string appMeta = $"{asm.GetName().Name}, Version {asm.GetName().Version}, Hash {asm.ManifestModule.ModuleVersionId}";
+
+            string message = $@"
+SECURITY EVENT: Authorization {(success ? "SUCCESS" : "FAILURE")}
+WHO (User): {userName}
+REQUIRED ROLE: {requiredRole}
+RESULT: {(success ? "Access granted" : "Access denied")}
+WHERE (MAC): {macAddress}
+WHEN: {timestamp}
+WHY: {reason}
+HOW: {appMeta}
+";
+
+            EventLog.WriteEntry(
+                SOURCE,
+                message,
+                success ? EventLogEntryType.Information : EventLogEntryType.Warning
+            );
+        }
+
 
         private static string GetMacAddress()
         {

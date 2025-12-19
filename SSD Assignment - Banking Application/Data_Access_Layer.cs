@@ -71,50 +71,57 @@ namespace Banking_Application
                 initialiseDatabase();
             else
             {
-
-                using (var connection = getDatabaseConnection())
+                try
                 {
-                    connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "SELECT * FROM Bank_Accounts";
-                    SqliteDataReader dr = command.ExecuteReader();
-                    
-                    while(dr.Read())
+                    using (var connection = getDatabaseConnection())
                     {
+                        connection.Open();
+                        var command = connection.CreateCommand();
+                        command.CommandText = "SELECT * FROM Bank_Accounts";
+                        SqliteDataReader dr = command.ExecuteReader();
 
-                        int accountType = dr.GetInt16(7);
-
-                        if(accountType == Account_Type.Current_Account)
+                        while (dr.Read())
                         {
-                            Current_Account ca = new Current_Account();
-                            ca.accountNo = dr.GetString(0);
-                            ca.name = Cryptography.Decrypt(dr.GetString(1));
-                            ca.address_line_1 = Cryptography.Decrypt(dr.GetString(2));
-                            ca.address_line_2 = Cryptography.Decrypt(dr.GetString(3));
-                            ca.address_line_3 = Cryptography.Decrypt(dr.GetString(4));
-                            ca.town = Cryptography.Decrypt(dr.GetString(5));
-                            ca.balance = dr.GetDouble(6);
-                            ca.overdraftAmount = dr.GetDouble(8);
-                            accounts.Add(ca);
-                        }
-                        else
-                        {
-                            Savings_Account sa = new Savings_Account();
-                            sa.accountNo = dr.GetString(0);
-                            sa.name = Cryptography.Decrypt(dr.GetString(1));
-                            sa.address_line_1 = Cryptography.Decrypt(dr.GetString(2));
-                            sa.address_line_2 = Cryptography.Decrypt(dr.GetString(3));
-                            sa.address_line_3 = Cryptography.Decrypt(dr.GetString(4));
-                            sa.town = Cryptography.Decrypt(dr.GetString(5));
-                            sa.balance = dr.GetDouble(6);
-                            sa.interestRate = dr.GetDouble(9);
-                            accounts.Add(sa);
-                        }
 
+                            int accountType = dr.GetInt16(7);
+
+                            if (accountType == Account_Type.Current_Account)
+                            {
+                                Current_Account ca = new Current_Account();
+                                ca.accountNo = dr.GetString(0);
+                                ca.name = Cryptography.Decrypt(dr.GetString(1));
+                                ca.address_line_1 = Cryptography.Decrypt(dr.GetString(2));
+                                ca.address_line_2 = Cryptography.Decrypt(dr.GetString(3));
+                                ca.address_line_3 = Cryptography.Decrypt(dr.GetString(4));
+                                ca.town = Cryptography.Decrypt(dr.GetString(5));
+                                ca.balance = dr.GetDouble(6);
+                                ca.overdraftAmount = dr.GetDouble(8);
+                                accounts.Add(ca);
+                            }
+                            else
+                            {
+                                Savings_Account sa = new Savings_Account();
+                                sa.accountNo = dr.GetString(0);
+                                sa.name = Cryptography.Decrypt(dr.GetString(1));
+                                sa.address_line_1 = Cryptography.Decrypt(dr.GetString(2));
+                                sa.address_line_2 = Cryptography.Decrypt(dr.GetString(3));
+                                sa.address_line_3 = Cryptography.Decrypt(dr.GetString(4));
+                                sa.town = Cryptography.Decrypt(dr.GetString(5));
+                                sa.balance = dr.GetDouble(6);
+                                sa.interestRate = dr.GetDouble(9);
+                                accounts.Add(sa);
+                            }
+
+
+                        }
 
                     }
-
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Operation failed securely.");
+                }
+                
 
             }
         }
@@ -127,47 +134,20 @@ namespace Banking_Application
             else
                 ba = (Savings_Account)ba;
 
+            if (!Validator.IsValidName(ba.name))
+                throw new ArgumentException("Invalid account holder name.");
+
             accounts.Add(ba);
 
-            //using (var connection = getDatabaseConnection())
-            //{
-            //    connection.Open();
-            //    var command = connection.CreateCommand();
-            //    command.CommandText =
-            //    @"
-            //        INSERT INTO Bank_Accounts VALUES(" +
-            //        "'" + ba.accountNo + "', " +
-            //        "'" + Cryptography.Encrypt(ba.name) + "', " +
-            //        "'" + Cryptography.Encrypt(ba.address_line_1) + "', " +
-            //        "'" + Cryptography.Encrypt(ba.address_line_2) + "', " +
-            //        "'" + Cryptography.Encrypt(ba.address_line_3) + "', " +
-            //        "'" + Cryptography.Encrypt(ba.town) + "', " +
-            //        ba.balance + ", " +
-            //        (ba.GetType() == typeof(Current_Account) ? 1 : 2) + ", ";
-
-            //    if (ba.GetType() == typeof(Current_Account))
-            //    {
-            //        Current_Account ca = (Current_Account)ba;
-            //        command.CommandText += ca.overdraftAmount + ", NULL)";
-            //    }
-
-            //    else
-            //    {
-            //        Savings_Account sa = (Savings_Account)ba;
-            //        command.CommandText += "NULL," + sa.interestRate + ")";
-            //    }
-
-            //    command.ExecuteNonQuery();
-
-            //}
-
-            using (var connection = getDatabaseConnection())
+            try
             {
-                connection.Open();
-                var command = connection.CreateCommand();
+                using (var connection = getDatabaseConnection())
+                {
+                    connection.Open();
+                    var command = connection.CreateCommand();
 
-                command.CommandText =
-                @"
+                    command.CommandText =
+                    @"
 INSERT INTO Bank_Accounts
 (accountNo, name, address_line_1, address_line_2, address_line_3, town,
     balance, accountType, overdraftAmount, interestRate)
@@ -175,30 +155,36 @@ VALUES
 (@accNo, @name, @a1, @a2, @a3, @town, @balance, @type, @overdraft, @interest)
 ";
 
-                command.Parameters.AddWithValue("@accNo", ba.accountNo);
-                command.Parameters.AddWithValue("@name", Cryptography.Encrypt(ba.name));
-                command.Parameters.AddWithValue("@a1", Cryptography.Encrypt(ba.address_line_1));
-                command.Parameters.AddWithValue("@a2", Cryptography.Encrypt(ba.address_line_2));
-                command.Parameters.AddWithValue("@a3", Cryptography.Encrypt(ba.address_line_3));
-                command.Parameters.AddWithValue("@town", Cryptography.Encrypt(ba.town));
-                command.Parameters.AddWithValue("@balance", ba.balance);
+                    command.Parameters.AddWithValue("@accNo", ba.accountNo);
+                    command.Parameters.AddWithValue("@name", Cryptography.Encrypt(ba.name));
+                    command.Parameters.AddWithValue("@a1", Cryptography.Encrypt(ba.address_line_1));
+                    command.Parameters.AddWithValue("@a2", Cryptography.Encrypt(ba.address_line_2));
+                    command.Parameters.AddWithValue("@a3", Cryptography.Encrypt(ba.address_line_3));
+                    command.Parameters.AddWithValue("@town", Cryptography.Encrypt(ba.town));
+                    command.Parameters.AddWithValue("@balance", ba.balance);
 
-                if (ba is Current_Account ca)
-                {
-                    command.Parameters.AddWithValue("@type", Account_Type.Current_Account);
-                    command.Parameters.AddWithValue("@overdraft", ca.overdraftAmount);
-                    command.Parameters.AddWithValue("@interest", DBNull.Value);
-                }
-                else
-                {
-                    Savings_Account sa = (Savings_Account)ba;
-                    command.Parameters.AddWithValue("@type", Account_Type.Savings_Account);
-                    command.Parameters.AddWithValue("@overdraft", DBNull.Value);
-                    command.Parameters.AddWithValue("@interest", sa.interestRate);
-                }
+                    if (ba is Current_Account ca)
+                    {
+                        command.Parameters.AddWithValue("@type", Account_Type.Current_Account);
+                        command.Parameters.AddWithValue("@overdraft", ca.overdraftAmount);
+                        command.Parameters.AddWithValue("@interest", DBNull.Value);
+                    }
+                    else
+                    {
+                        Savings_Account sa = (Savings_Account)ba;
+                        command.Parameters.AddWithValue("@type", Account_Type.Savings_Account);
+                        command.Parameters.AddWithValue("@overdraft", DBNull.Value);
+                        command.Parameters.AddWithValue("@interest", sa.interestRate);
+                    }
 
-                command.ExecuteNonQuery();
+                    command.ExecuteNonQuery();
+                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Operation failed securely.");
+            }
+           
 
             Logger.Log(
                 Environment.UserName,
@@ -212,9 +198,11 @@ VALUES
         }
 
         public Bank_Account findBankAccountByAccNo(String accNo) 
-        { 
-        
-            foreach(Bank_Account ba in accounts)
+        {
+            if (!Validator.IsValidAccountNo(accNo))
+                return null;
+
+            foreach (Bank_Account ba in accounts)
             {
 
                 if (ba.accountNo.Equals(accNo))
@@ -229,6 +217,15 @@ VALUES
 
         public bool closeBankAccount(String accNo) 
         {
+            if (!ActiveDirectoryHelper.IsUserInAdminGroup())
+            {
+                Console.WriteLine("Admin approval required.");
+                return false;
+            }
+
+            if (!Validator.IsValidAccountNo(accNo))
+                return false;
+
 
             Bank_Account toRemove = null;
             
@@ -252,14 +249,22 @@ VALUES
             {
                 accounts.Remove(toRemove);
 
-                using (var connection = getDatabaseConnection())
+                try
                 {
-                    connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "DELETE FROM Bank_Accounts WHERE accountNo = @accNo";
-                    command.Parameters.AddWithValue("@accNo", toRemove.accountNo);
-                    command.ExecuteNonQuery();
+                    using (var connection = getDatabaseConnection())
+                    {
+                        connection.Open();
+                        var command = connection.CreateCommand();
+                        command.CommandText = "DELETE FROM Bank_Accounts WHERE accountNo = @accNo";
+                        command.Parameters.AddWithValue("@accNo", toRemove.accountNo);
+                        command.ExecuteNonQuery();
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Operation failed securely.");
+                }
+                
 
                 Logger.Log(
                     Environment.UserName,
@@ -275,6 +280,11 @@ VALUES
 
         public bool lodge(String accNo, double amountToLodge)
         {
+            if (!Validator.IsValidAccountNo(accNo))
+                return false;
+
+            if (!Validator.IsValidAmount(amountToLodge))
+                return false;
 
             Bank_Account toLodgeTo = null;
 
@@ -295,16 +305,26 @@ VALUES
             else
             {
 
-                using (var connection = getDatabaseConnection())
+                try
                 {
-                    connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "UPDATE Bank_Accounts SET balance = @balance WHERE accountNo = @accNo";
+                    using (var connection = getDatabaseConnection())
+                    {
+                        connection.Open();
+                        var command = connection.CreateCommand();
+                        command.CommandText = "UPDATE Bank_Accounts SET balance = @balance WHERE accountNo = @accNo";
 
-                    command.Parameters.AddWithValue("@balance", toLodgeTo.balance);
-                    command.Parameters.AddWithValue("@accNo", toLodgeTo.accountNo);
-                    command.ExecuteNonQuery();
+                        command.Parameters.AddWithValue("@balance", toLodgeTo.balance);
+                        command.Parameters.AddWithValue("@accNo", toLodgeTo.accountNo);
+                        command.ExecuteNonQuery();
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Operation failed securely.");
+                    return false;
+                }
+
+                
 
                 string reason = amountToLodge > 10000 ? "High-value transaction" : "N/A";
 
@@ -323,6 +343,11 @@ VALUES
 
         public bool withdraw(String accNo, double amountToWithdraw)
         {
+            if (!Validator.IsValidAccountNo(accNo))
+                return false;
+
+            if (!Validator.IsValidAmount(amountToWithdraw))
+                return false;
 
             Bank_Account toWithdrawFrom = null;
             bool result = false;
@@ -343,18 +368,26 @@ VALUES
                 return false;
             else
             {
-
-                using (var connection = getDatabaseConnection())
+                try
                 {
-                    connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "UPDATE Bank_Accounts SET balance = @balance WHERE accountNo = @accNo";
+                    using (var connection = getDatabaseConnection())
+                    {
+                        connection.Open();
+                        var command = connection.CreateCommand();
+                        command.CommandText = "UPDATE Bank_Accounts SET balance = @balance WHERE accountNo = @accNo";
 
-                    command.Parameters.AddWithValue("@balance", toWithdrawFrom.balance);
-                    command.Parameters.AddWithValue("@accNo", toWithdrawFrom.accountNo);
-                    command.ExecuteNonQuery();
+                        command.Parameters.AddWithValue("@balance", toWithdrawFrom.balance);
+                        command.Parameters.AddWithValue("@accNo", toWithdrawFrom.accountNo);
+                        command.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Operation failed securely.");
+                    return false;
                 }
 
+                
                 string reason = amountToWithdraw > 10000 ? "High-value transaction" : "N/A";
 
                 Logger.Log(

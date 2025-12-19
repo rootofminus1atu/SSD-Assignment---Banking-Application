@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Principal;
 
 namespace Banking_Application
 {
@@ -10,15 +11,33 @@ namespace Banking_Application
     {
         public static void Main(string[] args)
         {
+            string user = Environment.UserName;
+
+            if (!ActiveDirectoryHelper.IsUserInTellerGroup())
+            {
+                Console.WriteLine("hi");
+                Logger.LogAuthorizationAttempt(
+                    user,
+                    "Bank Teller",
+                    success: false,
+                    reason: "User is not a member of the Bank Teller AD group"
+                );
+
+                Console.WriteLine("Only Bank Tellers can use this app.");
+                return;
+            }
+            Console.WriteLine("hi");
+
+            Logger.LogAuthorizationAttempt(
+                user,
+                "Bank Teller",
+                success: true
+            );
+            Console.WriteLine("hi");
+
             DotNetEnv.Env.Load(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env"));
 
-            Console.WriteLine(Environment.GetEnvironmentVariable("BANKING_APP_AES_KEY"));
-
-
-
-            //var key = RandomNumberGenerator.GetBytes(32);
-            //Console.WriteLine(Convert.ToBase64String(key));
-            //Console.ReadKey();
+            Console.WriteLine("hi");
 
 
             Data_Access_Layer dal = Data_Access_Layer.getInstance();
