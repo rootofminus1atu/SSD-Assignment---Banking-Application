@@ -1,6 +1,8 @@
-﻿using System;
+﻿using DotNetEnv;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace Banking_Application
 {
@@ -8,7 +10,17 @@ namespace Banking_Application
     {
         public static void Main(string[] args)
         {
-            
+            DotNetEnv.Env.Load(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env"));
+
+            Console.WriteLine(Environment.GetEnvironmentVariable("BANKING_APP_AES_KEY"));
+
+
+
+            //var key = RandomNumberGenerator.GetBytes(32);
+            //Console.WriteLine(Convert.ToBase64String(key));
+            //Console.ReadKey();
+
+
             Data_Access_Layer dal = Data_Access_Layer.getInstance();
             dal.loadBankAccounts();
             bool running = true;
